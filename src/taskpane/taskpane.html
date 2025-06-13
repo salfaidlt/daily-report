@@ -16,19 +16,19 @@
 
         <!-- Control Panel -->
         <div class="control-panel">
-            <button class="btn btn-primary" onclick="formSystem.addNewForm()">
+            <button class="btn btn-primary btn-uniform" onclick="formSystem.addNewForm()">
                 <i class="icon">📝</i>
                 Add New Message
             </button>
-            <button class="btn btn-secondary" onclick="formSystem.goToToday()">
+            <button class="btn btn-secondary btn-uniform" onclick="formSystem.goToToday()">
                 <i class="icon">📅</i>
                 Go to Today
             </button>
-            <button class="btn btn-tertiary" onclick="formSystem.exportData()">
+            <button class="btn btn-tertiary btn-uniform" onclick="formSystem.exportData()">
                 <i class="icon">💾</i>
                 Export Data
             </button>
-            <button class="btn btn-quaternary" onclick="formSystem.clearAllData()">
+            <button class="btn btn-quaternary btn-uniform" onclick="formSystem.clearAllData()">
                 <i class="icon">🗑️</i>
                 Clear All
             </button>
@@ -99,17 +99,9 @@
             <div class="modal-body">
                 <p>Choose export format:</p>
                 <div class="export-options">
-                    <button class="btn btn-primary" onclick="formSystem.exportToJSON()">
-                        <i class="icon">📄</i>
-                        Export as JSON
-                    </button>
                     <button class="btn btn-secondary" onclick="formSystem.exportToCSV()">
                         <i class="icon">📊</i>
                         Export as CSV
-                    </button>
-                    <button class="btn btn-tertiary" onclick="formSystem.exportToText()">
-                        <i class="icon">📝</i>
-                        Export as Text
                     </button>
                 </div>
             </div>

@@ -629,3 +629,8 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #0a0af0 0%, #7a9e40 100%);
 }
+
+.btn-uniform {
+    width: 200px; /* ou toute autre dimension souhaitée */
+    height: 50px; /* ou toute autre dimension souhaitée */
+}
