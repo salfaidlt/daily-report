@@ -1,18 +1,109 @@
 class FormManagementSystem {
     constructor() {
+        this.targetWorkbookName = "test.xlsx"; // Set your target workbook name here
+        this.targetSheetName = "Sheet1"; // Optionally set a target sheet name
+        this.isAddInConfigured = true;
+        this.initializeExcelEvents();
+        
         this.currentMonth = new Date();
         this.forms = this.loadFromStorage();
         this.init();
     }
 
-    async init() {
-        await this.loadFromExcel();
+    init() {
         this.updateCurrentDate();
         this.updateCurrentMonth();
         this.renderForms();
         this.updateStats();
         this.setupEventListeners();
         setInterval(() => this.updateCurrentDate(), 60000);
+    }
+
+    async initializeExcelEvents() {
+        try {
+            // Check if we're in Excel
+            if (Office.context.host === Office.HostType.Excel) {
+                // Check if we should monitor sheet activation
+                const configured = await this.getSetting("test");
+                if (configured) {
+                    this.isAddInConfigured = true;
+                    this.monitorSheetActivation();
+                }
+                
+                // Set up worksheet activated handler
+                await Excel.run(async (context) => {
+                    const sheets = context.workbook.worksheets;
+                    sheets.onActivated.add(this.handleSheetActivation.bind(this));
+                    await context.sync();
+                });
+            }
+        } catch (error) {
+            console.error("Error initializing Excel events:", error);
+        }
+    }
+
+    async monitorSheetActivation() {
+        try {
+            await Excel.run(async (context) => {
+                const sheet = context.workbook.worksheets.getActiveWorksheet();
+                sheet.load("test");
+                await context.sync();
+                
+                if (sheet.name === this.targetSheetName) {
+                    Office.addin.showAsTaskpane();
+                }
+            });
+        } catch (error) {
+            console.error("Error monitoring sheet activation:", error);
+        }
+    }
+
+    async handleSheetActivation(event) {
+        try {
+            const worksheet = event.worksheet;
+            worksheet.load("name");
+            await event.context.sync();
+            
+            if (worksheet.name === this.targetSheetName && this.isAddInConfigured) {
+                Office.addin.showAsTaskpane();
+            }
+        } catch (error) {
+            console.error("Error handling sheet activation:", error);
+        }
+    }
+
+    async configureForTargetSheet() {
+        try {
+            await this.setSetting("targetSheetConfigured", true);
+            this.isAddInConfigured = true;
+            this.monitorSheetActivation();
+            this.showToast("Add-in will now open automatically for this sheet");
+        } catch (error) {
+            console.error("Error configuring for target sheet:", error);
+            this.showToast("Error configuring automatic opening", "error");
+        }
+    }
+
+    // Helper methods for settings
+    async getSetting(key) {
+        return new Promise((resolve) => {
+            Office.context.document.settings.get(key, (result) => {
+                if (result.status === Office.AsyncResultStatus.Succeeded) {
+                    resolve(result.value);
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+    }
+
+    async setSetting(key, value) {
+        return new Promise((resolve) => {
+            Office.context.document.settings.set(key, value);
+            Office.context.document.settings.saveAsync((result) => {
+                resolve(result.status === Office.AsyncResultStatus.Succeeded);
+            });
+        });
     }
 
     async loadFromExcel() {
@@ -161,7 +252,7 @@ class FormManagementSystem {
         };
 
         this.forms[formId] = newForm;
-        await this.saveToExcel();
+        // await this.saveToExcel();
         this.renderForms();
         this.updateStats();
 
@@ -302,13 +393,15 @@ class FormManagementSystem {
     }
 
     exportToCSV() {
+        const currentMonthForms = this.getCurrentMonthForms();
         let csv = 'id,createdAt,lastModified,monthKey,content,date\n';
-        Object.values(this.forms).forEach(form => {
+        currentMonthForms.forEach(form => {
             csv += `"${form.id}","${form.createdAt}","${form.lastModified}","${form.monthKey}","${form.content.replace(/"/g, '""')}","${form.date}"\n`;
         });
 
         const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-        const exportFileDefaultName = 'payroll-forms.csv';
+        const monthYear = this.getMonthKey(this.currentMonth);
+        const exportFileDefaultName = `payroll-forms-${monthYear}.csv`;
 
         const linkElement = document.createElement('a');
         linkElement.setAttribute('href', dataUri);
@@ -400,3 +493,8 @@ async function saveToExcel(forms) {
 
 // Initialize the form management system
 const formSystem = new FormManagementSystem();
+
+// Add this to your HTML to configure the automatic opening
+function configureAutoOpen() {
+    formSystem.configureForTargetSheet();
+}
